@@ -797,11 +797,6 @@ Az API ekkor elérhető lesz: `http://localhost:8000/api`
 
 vagy XAMPP esetén: `http://localhost/reservationSystem/public/api`
 
-**9. Vite futtatása (frontend asset-ek)**
-```bash
-npm run dev
-```
-
 ---
 
 ## Fejlesztési Munkafolyamat
@@ -854,66 +849,3 @@ npm run dev
 
 ---
 
-## Gyakori Kérdések
-
-### Hogyan lehet admin felhasználót létrehozni?
-Az adatbázisban közvetlenül módosítsa az `is_admin` mező értékét 1-re (true).
-
-Vagy a seed-ben: `UserSeeder.php`
-```php
-User::create([
-    'name' => 'admin',
-    'email' => 'admin@example.com',
-    'password' => Hash::make('admin'),
-    'is_admin' => true,  // Ez teszi admin-né
-]);
-```
-
-### Hogyan működik a foglalás státusza?
-- `pending`: Újabb foglalás, még nem jóváhagyva
-- `approved`: Admin által jóváhagyva
-- `rejected`: Admin által elutasítva
-- `cancelled`: Felhasználó által visszavonva
-
-### Mi a különbség a normál felhasználó és az admin között?
-Lásd a **Szerepek (Roles)** szekciót az Autentifikáció részben.
-
-### Hogyan lehet token-t szerezni?
-1. Regisztráljon: `POST /register`
-2. Vagy bejelentkezzen: `POST /login`
-3. A response-ban kapja meg az `access_token`-t
-4. Minden további kéréshez használja: `Authorization: Bearer {token}`
-
-### Mi történik ha a token lejár?
-A token nem jár le automatikusan. A kijelentkezéskor törlődik (`DELETE /logout`).
-
----
-
-## Jövőbeli Fejlesztések
-
-- [ ] Email notifikációk foglalás módosításkor
-- [ ] SMS notifikációk
-- [ ] Foglalási ütközések automatikus detektálása
-- [ ] Előzetes foglalások időpontok zárása
-- [ ] Felhasználói értékelési rendszer
-- [ ] Foglalás visszamondási politika
-- [ ] Heti/havi foglalási statisztikák
-- [ ] Sokoldalú keresés és szűrés
-- [ ] Integrálás naptár alkalmazásokkal (Google Calendar, Outlook)
-- [ ] Payment gateway integráció (díjfizetéshez)
-- [ ] Automatikus emlékeztetők
-
----
-
-## Licenc
-
-MIT License
-
-## Szerző
-
-Adrian061022
-
----
-
-**Projekt indítás dátuma**: 2025. december 4.  
-**Utolsó frissítés**: 2025. december 7.
