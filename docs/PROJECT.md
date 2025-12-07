@@ -1,0 +1,920 @@
+# Reservation System - Projekt Dokumentáció
+
+## Projekt Áttekintése
+
+A **Reservation System** egy Laravel-alapú REST API alkalmazás, amely lehetővé teszi a felhasználók számára erőforrások foglalását (például meetingtermek, felszerelések, berendezések). Az alkalmazás felhasználó-autentifikáción alapul (Laravel Sanctum API tokenek) és szerep-alapú hozzáférés-vezérlést (RBAC) alkalmaz az adminisztrációs funkciók megvédésére.
+
+**Base URL:** `http://127.0.0.1:8000/api` (local development)
+vagy `http://localhost/reservationSystem/public/api` (XAMPP)
+
+## Technológia Stack
+
+- **Backend Framework**: Laravel 11
+- **Autentifikáció**: Laravel Sanctum (API tokenek)
+- **Adatbázis**: MySQL 8.0+
+- **Testing**: PHPUnit (Feature tesztek)
+- **Build Tool**: Vite
+- **Package Manager**: Composer, npm
+- **PHP verzió**: 8.2+
+
+## Adatbázis Terv
+
+```
++---------------------+     +---------------------+       +-----------------+        +-------------+
+|personal_access_tokens|    |        users        |       |   reservations  |        |  resources  |
++---------------------+     +---------------------+       +-----------------+        +-------------+
+| id (PK)             |   _1| id (PK)             |1__    | id (PK)         |     __1| id (PK)     |
+| tokenable_id (FK)   |K_/  | name                |   \__N| user_id (FK)    |    /   | name        |
+| tokenable_type      |     | email (unique)      |       | resource_id (FK)|M__/    | type        |
+| name                |     | password            |       | start_time      |        | description |
+| token (unique)      |     | phone (nullable)    |       | end_time        |        | available   |
+| abilities           |     | is_admin (boolean)  |       | status          |        | created_at  |
+| last_used_at        |     | created_at          |       | created_at      |        | updated_at  |
+| created_at          |     | updated_at          |       | updated_at      |        +-------------+
++---------------------+     +---------------------+       +-----------------+
+```
+
+## Projekt Szerkezete
+
+```
+reservationSystem/
+├── app/
+│   ├── Http/
+│   │   └── Controllers/
+│   │       ├── AuthController.php          # Regisztráció, bejelentkezés, kijelentkezés
+│   │       ├── UserController.php          # Felhasználó profil kezelés (admin funkciók)
+│   │       ├── ResourceController.php      # Erőforrás CRUD operációk
+│   │       └── ReservationController.php   # Foglalás CRUD operációk
+│   ├── Models/
+│   │   ├── User.php                        # Felhasználó model (Sanctum)
+│   │   ├── Resource.php                    # Erőforrás model
+│   │   └── Reservation.php                 # Foglalás model
+│   └── Providers/
+│       └── AppServiceProvider.php
+├── database/
+│   ├── factories/                          # Factory-k tesztadatok generálásához
+│   │   ├── UserFactory.php
+│   │   ├── ResourceFactory.php
+│   │   └── ReservationFactory.php
+│   ├── migrations/                         # Adatbázis sémamigráció
+│   │   ├── 0001_01_01_000000_create_users_table.php
+│   │   ├── 2025_12_04_080202_create_resources_table.php
+│   │   └── 2025_12_04_080404_create_reservations_table.php
+│   └── seeders/
+│       ├── DatabaseSeeder.php
+│       ├── UserSeeder.php
+│       ├── ResourceSeeder.php
+│       └── ReservationSeeder.php
+├── routes/
+│   └── api.php                             # REST API végpontok definíciója
+├── tests/
+│   ├── Feature/
+│   │   ├── AuthTest.php                    # Autentifikáció tesztek
+│   │   ├── UserTest.php                    # Felhasználó kezelés tesztek
+│   │   ├── ResourceTest.php                # Erőforrás kezelés tesztek
+│   │   ├── ReservationTest.php             # Foglalás kezelés tesztek
+│   │   └── ExampleTest.php
+│   └── Unit/
+├── config/
+│   ├── auth.php                            # Autentifikáció konfiguráció
+│   └── sanctum.php                         # Sanctum (API) konfiguráció
+├── .env                                    # Környezeti változók
+├── composer.json                           # PHP függőségek
+├── phpunit.xml                             # PHPUnit konfiguráció
+└── README.md
+```
+
+## Adatmodell
+
+### User (Felhasználó)
+```php
+{
+    "id": 1,
+    "name": "John Doe",
+    "email": "john@example.com",
+    "password": "hashed_password", // Bcrypt hash
+    "phone": "+36201234567", // nullable
+    "is_admin": false,
+    "created_at": "2025-12-04T10:00:00Z",
+    "updated_at": "2025-12-04T10:00:00Z"
+}
+```
+
+### Resource (Erőforrás)
+```php
+{
+    "id": 1,
+    "name": "Meeting Room A",
+    "type": "room",
+    "description": "Large conference room for meetings",
+    "available": true,
+    "created_at": "2025-12-04T10:00:00Z",
+    "updated_at": "2025-12-04T10:00:00Z"
+}
+```
+
+### Reservation (Foglalás)
+```php
+{
+    "id": 1,
+    "user_id": 5,
+    "resource_id": 1,
+    "start_time": "2025-12-10T14:00:00Z",
+    "end_time": "2025-12-10T15:00:00Z",
+    "status": "pending", // pending, approved, rejected, cancelled
+    "created_at": "2025-12-04T12:00:00Z",
+    "updated_at": "2025-12-04T12:00:00Z"
+}
+```
+
+## API Végpontok
+
+### Nem védett végpontok:
+- **GET** `/ping` - API teszteléshez
+- **POST** `/register` - Regisztrációhoz
+- **POST** `/login` - Bejelentkezéshez
+
+### Hibák kezelése:
+- **400 Bad Request**: A kérés hibás formátumú vagy hiányoznak a szükséges mezők
+- **401 Unauthorized**: Érvénytelen vagy hiányzó token
+- **403 Forbidden**: A felhasználó nem rendelkezik megfelelő jogosultságokkal
+- **404 Not Found**: A kért erőforrás nem található
+- **409 Conflict**: Az erőforrás már létezik vagy egy már bekövetkezett állapotot próbálnak ismét végrehajtani
+- **422 Unprocessable Entity**: Validációs hibák a kérésben
+
+---
+
+## Felhasználókezelés
+
+### **POST** `/register` - Regisztráció
+
+Új felhasználó regisztrálása. Az új felhasználók alapértelmezetten normál felhasználók (`is_admin = false`).
+
+**Kérés Törzse:**
+```json
+{
+    "name": "John Doe",
+    "email": "john@example.com",
+    "password": "SecurePass_2025",
+    "phone": "+36201234567"
+}
+```
+
+**Válasz (sikeres regisztráció):** `201 Created`
+```json
+{
+    "message": "User registered successfully",
+    "user": {
+        "id": 10,
+        "name": "John Doe",
+        "email": "john@example.com"
+    }
+}
+```
+
+**Válasz (e-mail már foglalt):** `422 Unprocessable Entity`
+```json
+{
+  "message": "The email has already been taken.",
+  "errors": {
+    "email": ["The email has already been taken."]
+  }
+}
+```
+
+---
+
+### **POST** `/login` - Bejelentkezés
+
+Bejelentkezés e-mail címmel és jelszóval.
+
+**Kérés Törzse:**
+```json
+{
+  "email": "john@example.com",
+  "password": "SecurePass_2025"
+}
+```
+
+**Válasz (sikeres bejelentkezés):** `200 OK`
+```json
+{
+    "access_token": "2|7Fbr79b5zn8RxMfOqfdzZ31SnGWvgDidjahbdRfL2a98cfd8",
+    "token_type": "Bearer"
+}
+```
+
+**Válasz (hibás bejelentkezés):** `401 Unauthorized`
+```json
+{
+  "message": "Invalid credentials"
+}
+```
+
+---
+
+> Az innen kezdve minden végpont **autentifikált**, tehát a kérés `Authorization` headerében meg kell adni a tokent:
+> 
+> `Authorization: Bearer 2|7Fbr79b5zn8RxMfOqfdzZ31SnGWvgDidjahbdRfL2a98cfd8`
+
+---
+
+### **POST** `/logout` - Kijelentkezés
+
+A jelenlegi autentikált felhasználó kijelentkeztetése és tokenjének törlése.
+
+**Válasz (sikeres kijelentkezés):** `200 OK`
+```json
+{
+  "message": "Logged out successfully"
+}
+```
+
+---
+
+### **GET** `/users/me` - Aktuális Profil
+
+Saját felhasználói profil adatainak lekérése.
+
+**Válasz:** `200 OK`
+```json
+{
+    "id": 5,
+    "name": "John Doe",
+    "email": "john@example.com",
+    "phone": "+36201234567"
+}
+```
+
+---
+
+### **PUT** `/users/me` - Profil Frissítése
+
+Saját felhasználói adatok módosítása (név, e-mail, jelszó, telefonszám).
+
+**Kérés Törzse:**
+```json
+{
+  "name": "New Name",
+  "email": "newemail@example.com",
+  "password": "NewPassword_2025",
+  "phone": "+36209876543"
+}
+```
+
+**Válasz (sikeres frissítés):** `200 OK`
+```json
+{
+  "id": 5,
+  "name": "New Name",
+  "email": "newemail@example.com",
+  "phone": "+36209876543"
+}
+```
+
+**Válasz (validációs hiba):** `422 Unprocessable Entity`
+
+---
+
+### **GET** `/users` - Összes Felhasználó Listázása (Admin Csak)
+
+Az összes felhasználó adatainak lekérése adminisztratív célokra.
+
+**Válasz:** `200 OK`
+```json
+[
+    {
+        "id": 1,
+        "name": "admin",
+        "email": "admin@example.com"
+    },
+    {
+        "id": 5,
+        "name": "John Doe",
+        "email": "john@example.com"
+    }
+]
+```
+
+**Válasz (nem admin):** `403 Forbidden`
+```json
+{
+  "message": "Forbidden"
+}
+```
+
+---
+
+### **GET** `/users/{id}` - Konkrét Felhasználó Megtekintése (Admin Csak)
+
+Bármely felhasználó adatainak lekérése az ID alapján.
+
+**Válasz:** `200 OK`
+```json
+{
+    "id": 5,
+    "name": "John Doe",
+    "email": "john@example.com",
+    "phone": "+36201234567"
+}
+```
+
+**Válasz (felhasználó nem található):** `404 Not Found`
+
+**Válasz (nem admin):** `403 Forbidden`
+
+---
+
+### **DELETE** `/users/{id}` - Felhasználó Törlése (Admin Csak)
+
+Felhasználó fizikai törlése az adatbázisból.
+
+**Válasz (sikeres törlés):** `200 OK`
+```json
+{
+  "message": "User deleted"
+}
+```
+
+**Válasz (felhasználó nem található):** `404 Not Found`
+
+---
+
+## Erőforrások Kezelése
+
+### **GET** `/resources` - Összes Erőforrás Listázása
+
+Az összes elérhető erőforrás listájának lekérése (autentifikált felhasználók).
+
+**Válasz:** `200 OK`
+```json
+[
+    {
+        "id": 1,
+        "name": "Meeting Room A",
+        "type": "room",
+        "description": "Large conference room",
+        "available": true,
+        "created_at": "2025-12-04T10:30:00Z",
+        "updated_at": "2025-12-04T10:30:00Z"
+    },
+    {
+        "id": 2,
+        "name": "Projektor",
+        "type": "equipment",
+        "description": "4K Projector",
+        "available": true,
+        "created_at": "2025-12-04T10:30:00Z",
+        "updated_at": "2025-12-04T10:30:00Z"
+    }
+]
+```
+
+---
+
+### **GET** `/resources/{id}` - Konkrét Erőforrás Megtekintése
+
+Egy específikus erőforrás részleteinak lekérése.
+
+**Válasz:** `200 OK`
+```json
+{
+    "id": 1,
+    "name": "Meeting Room A",
+    "type": "room",
+    "description": "Large conference room",
+    "available": true,
+    "created_at": "2025-12-04T10:30:00Z",
+    "updated_at": "2025-12-04T10:30:00Z"
+}
+```
+
+**Válasz (nem található):** `404 Not Found`
+
+---
+
+### **POST** `/resources` - Erőforrás Létrehozása (Admin Csak)
+
+Új erőforrás hozzáadása a rendszerhez.
+
+**Kérés Törzse:**
+```json
+{
+    "name": "Meeting Room B",
+    "type": "room",
+    "description": "Small conference room",
+    "available": true
+}
+```
+
+**Válasz:** `201 Created`
+```json
+{
+    "id": 3,
+    "name": "Meeting Room B",
+    "type": "room",
+    "description": "Small conference room",
+    "available": true,
+    "created_at": "2025-12-04T11:00:00Z",
+    "updated_at": "2025-12-04T11:00:00Z"
+}
+```
+
+**Válasz (nem admin):** `403 Forbidden`
+```json
+{
+  "message": "Nincs jogosultságod erőforrás létrehozására."
+}
+```
+
+---
+
+### **PUT** `/resources/{id}` - Erőforrás Módosítása (Admin Csak)
+
+Meglévő erőforrás adatainak frissítése.
+
+**Kérés Törzse:**
+```json
+{
+    "name": "Updated Room Name",
+    "available": false
+}
+```
+
+**Válasz:** `200 OK`
+```json
+{
+    "id": 3,
+    "name": "Updated Room Name",
+    "type": "room",
+    "description": "Small conference room",
+    "available": false,
+    "created_at": "2025-12-04T11:00:00Z",
+    "updated_at": "2025-12-04T11:15:00Z"
+}
+```
+
+**Válasz (nem admin):** `403 Forbidden`
+
+---
+
+### **DELETE** `/resources/{id}` - Erőforrás Törlése (Admin Csak)
+
+Erőforrás eltávolítása a rendszerből.
+
+**Válasz:** `200 OK`
+```json
+{
+  "message": "Erőforrás törölve."
+}
+```
+
+**Válasz (nem admin):** `403 Forbidden`
+
+---
+
+## Foglalások Kezelése
+
+### **GET** `/reservations` - Foglalások Listázása
+
+- **Normál felhasználó**: Csak saját foglalásait látja
+- **Admin**: Összes foglalást lát
+
+**Válasz:** `200 OK`
+```json
+[
+    {
+        "id": 1,
+        "user_id": 5,
+        "resource_id": 1,
+        "start_time": "2025-12-10T14:00:00Z",
+        "end_time": "2025-12-10T15:00:00Z",
+        "status": "pending",
+        "created_at": "2025-12-04T12:00:00Z",
+        "updated_at": "2025-12-04T12:00:00Z"
+    }
+]
+```
+
+---
+
+### **GET** `/reservations/{id}` - Konkrét Foglalás Megtekintése
+
+- **Normál felhasználó**: Csak saját foglalásait érheti el
+- **Admin**: Bármely foglalást megtekinthet
+
+**Válasz:** `200 OK`
+```json
+{
+    "id": 1,
+    "user_id": 5,
+    "resource_id": 1,
+    "start_time": "2025-12-10T14:00:00Z",
+    "end_time": "2025-12-10T15:00:00Z",
+    "status": "pending",
+    "created_at": "2025-12-04T12:00:00Z",
+    "updated_at": "2025-12-04T12:00:00Z"
+}
+```
+
+**Válasz (jogosultság hiánya):** `403 Forbidden`
+```json
+{
+  "message": "Nincs jogosultságod megtekinteni ezt a foglalást!"
+}
+```
+
+---
+
+### **POST** `/reservations` - Foglalás Létrehozása
+
+Új foglalás létrehozása egy erőforrásra.
+
+**Kérés Törzse:**
+```json
+{
+    "resource_id": 1,
+    "start_time": "2025-12-10T14:00:00",
+    "end_time": "2025-12-10T15:00:00"
+}
+```
+
+**Válasz:** `201 Created`
+```json
+{
+    "id": 5,
+    "user_id": 5,
+    "resource_id": 1,
+    "start_time": "2025-12-10T14:00:00Z",
+    "end_time": "2025-12-10T15:00:00Z",
+    "status": "pending",
+    "created_at": "2025-12-04T12:30:00Z",
+    "updated_at": "2025-12-04T12:30:00Z"
+}
+```
+
+**Válasz (múltbeli foglalás):** `422 Unprocessable Entity`
+```json
+{
+  "message": "Validation failed"
+}
+```
+
+---
+
+### **PUT** `/reservations/{id}` - Foglalás Módosítása
+
+Meglévő foglalás adatainak frissítése.
+
+- **Normál felhasználó**: Módosíthatja az időpontokat, de **nem** a `status` mezőt
+- **Admin**: Módosíthat mindent, beleértve a státuszt is
+
+**Kérés Törzse:**
+```json
+{
+    "start_time": "2025-12-11T14:00:00",
+    "end_time": "2025-12-11T15:00:00",
+    "status": "approved"
+}
+```
+
+**Válasz:** `200 OK`
+```json
+{
+    "id": 5,
+    "user_id": 5,
+    "resource_id": 1,
+    "start_time": "2025-12-11T14:00:00Z",
+    "end_time": "2025-12-11T15:00:00Z",
+    "status": "approved",
+    "created_at": "2025-12-04T12:30:00Z",
+    "updated_at": "2025-12-04T13:00:00Z"
+}
+```
+
+---
+
+### **DELETE** `/reservations/{id}` - Foglalás Törlése
+
+Foglalás eltávolítása.
+
+**Válasz:** `200 OK`
+```json
+{
+  "message": "Reservation deleted"
+}
+```
+
+---
+
+## Foglalás Státuszok
+
+A foglalás a következő státuszok lehetnek:
+
+- **pending**: Újabb foglalás, még nem jóváhagyva
+- **approved**: Admin által jóváhagyva
+- **rejected**: Admin által elutasítva
+- **cancelled**: Felhasználó által visszavonva
+
+---
+
+## Összefoglalás - Végpontok Táblázata
+
+| HTTP | Útvonal | Jogosultság | Státusz | Leírás |
+|------|---------|-------------|--------|--------|
+| GET | `/ping` | Nyilvános | 200 OK | API teszteléshez |
+| POST | `/register` | Nyilvános | 201 Created, 422 | Regisztráció |
+| POST | `/login` | Nyilvános | 200 OK, 401 | Bejelentkezés |
+| POST | `/logout` | Auth | 200 OK, 401 | Kijelentkezés |
+| GET | `/users/me` | Auth | 200 OK, 401 | Saját profil |
+| PUT | `/users/me` | Auth | 200 OK, 401, 422 | Profil frissítés |
+| GET | `/users` | Admin | 200 OK, 403, 401 | Összes felhasználó |
+| GET | `/users/{id}` | Admin | 200 OK, 403, 404, 401 | Konkrét felhasználó |
+| DELETE | `/users/{id}` | Admin | 200 OK, 403, 404, 401 | Felhasználó törlés |
+| GET | `/resources` | Auth | 200 OK, 401 | Erőforrások |
+| GET | `/resources/{id}` | Auth | 200 OK, 401, 404 | Konkrét erőforrás |
+| POST | `/resources` | Admin | 201 Created, 403, 401 | Erőforrás létrehozás |
+| PUT | `/resources/{id}` | Admin | 200 OK, 403, 401 | Erőforrás módosítás |
+| DELETE | `/resources/{id}` | Admin | 200 OK, 403, 401 | Erőforrás törlés |
+| GET | `/reservations` | Auth | 200 OK, 401 | Foglalások |
+| GET | `/reservations/{id}` | Auth | 200 OK, 401, 403, 404 | Konkrét foglalás |
+| POST | `/reservations` | Auth | 201 Created, 401, 422 | Foglalás létrehozás |
+| PUT | `/reservations/{id}` | Auth | 200 OK, 401, 403, 422 | Foglalás módosítás |
+| DELETE | `/reservations/{id}` | Auth | 200 OK, 401, 403, 404 | Foglalás törlés |
+
+## Autentifikáció és Jogosultságok
+
+### Token-alapú Autentifikáció
+- Minden autentifikált endpoint `Authorization: Bearer {token}` header-t igényel
+- A token bejelentkezéskor jön vissza
+- A tokeneket a `personal_access_tokens` táblában tároljuk
+- Érvénytelen token esetén: `401 Unauthorized`
+
+### Szerepek (Roles)
+
+1. **Normál felhasználó** (`is_admin = false`)
+   - ✓ Saját profil megtekintése és módosítása
+   - ✓ Erőforrások megtekintése
+   - ✓ Saját foglalások CRUD operációk
+   - ✗ Saját foglalások státusza nem módosítható
+   - ✗ Más felhasználók adataihoz nincs hozzáférése
+   - ✗ Erőforrásokat nem módosíthatja
+
+2. **Administrator** (`is_admin = true`)
+   - ✓ Összes felhasználó kezelése
+   - ✓ Erőforrások teljes kezelése (létrehozás, módosítás, törlés)
+   - ✓ Összes foglalás megtekintése és kezelése
+   - ✓ Foglalás státuszának módosítása
+   - ✓ Felhasználók törlése
+
+## Tesztek
+
+### Teszt Futtatása
+
+```bash
+# Összes teszt futtatása
+php artisan test
+
+# Konkrét teszt fájl
+php artisan test tests/Feature/AuthTest.php
+
+# Konkrét teszt metódus
+php artisan test tests/Feature/AuthTest.php --filter test_register_creates_user
+
+# Teszt kimenet részletesebben
+php artisan test --verbose
+```
+
+### Teszt Lefedettség
+
+#### AuthTest.php (4 teszt)
+- `test_ping_endpoint_returns_ok()` - API állapot ellenőrzés
+- `test_register_creates_user()` - Regisztráció funkció
+- `test_login_with_valid_credentials()` - Sikeres bejelentkezés
+- `test_login_with_invalid_credentials()` - Hibás bejelentkezés
+
+#### UserTest.php (7 teszt)
+- `test_get_current_user_profile()` - Profil lekérés
+- `test_update_user_profile()` - Profil módosítás
+- `test_admin_list_all_users()` - Admin - összes felhasználó
+- `test_non_admin_cannot_list_users()` - Jogosultság ellenőrzés
+- `test_admin_show_specific_user()` - Admin - konkrét felhasználó
+- `test_admin_delete_user()` - Admin - felhasználó törlés
+- `test_unauthenticated_cannot_access_user_endpoints()` - Autentifikáció ellenőrzés
+
+#### ResourceTest.php (8 teszt)
+- `test_list_all_resources()` - Erőforrások listázása
+- `test_show_specific_resource()` - Konkrét erőforrás
+- `test_admin_create_resource()` - Admin - erőforrás létrehozás
+- `test_non_admin_cannot_create_resource()` - Jogosultság ellenőrzés
+- `test_admin_update_resource()` - Admin - erőforrás módosítás
+- `test_admin_delete_resource()` - Admin - erőforrás törlés
+- `test_non_admin_cannot_update_resource()` - Jogosultság ellenőrzés
+- `test_unauthenticated_cannot_create_resource()` - Autentifikáció ellenőrzés
+
+#### ReservationTest.php (11 teszt)
+- `test_user_list_own_reservations()` - Felhasználó saját foglalásai
+- `test_admin_list_all_reservations()` - Admin összes foglalása
+- `test_show_own_reservation()` - Saját foglalás megtekintés
+- `test_user_cannot_view_other_user_reservation()` - Jogosultság ellenőrzés
+- `test_create_reservation()` - Foglalás létrehozás
+- `test_cannot_create_reservation_in_past()` - Múltbeli foglalás tilalmazás
+- `test_user_update_own_reservation()` - Felhasználó foglalás módosítás
+- `test_admin_can_change_reservation_status()` - Admin status módosítás
+- `test_user_cannot_change_reservation_status()` - Jogosultság ellenőrzés
+- `test_delete_reservation()` - Foglalás törlés
+- `test_unauthenticated_cannot_create_reservation()` - Autentifikáció ellenőrzés
+
+**Összesen: 32 teszt, 100% pass rate ✅**
+
+## Telepítés és Futtatás
+
+### Előfeltételek
+- PHP 8.2+
+- MySQL 8.0+
+- Composer
+- Node.js (npm)
+- XAMPP vagy más PHP webszerver
+
+### Telepítési Lépések
+
+**1. Projekt klónozása / megnyitása**
+```bash
+cd c:\xampp\htdocs\reservationSystem
+```
+
+**2. Composer függőségek telepítése**
+```bash
+composer install
+```
+
+**3. NPM függőségek telepítése**
+```bash
+npm install
+```
+
+**4. .env fájl konfigurálása**
+```bash
+cp .env.example .env
+```
+
+Szerkessze a `.env` fájlt az adatbázis beállításokkal:
+```
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=reservation_system
+DB_USERNAME=root
+DB_PASSWORD=
+```
+
+**5. Alkalmazás kulcs generálása**
+```bash
+php artisan key:generate
+```
+
+**6. Adatbázis migráció futtatása**
+```bash
+php artisan migrate
+```
+
+**7. Adatbázis seed-elés (tesztadatok)**
+```bash
+php artisan db:seed
+```
+
+Ez létrehoz:
+- 1 admin felhasználót (`admin` / `admin`)
+- 9 normál felhasználót
+- 3 erőforrást
+- Néhány foglalást tesztadatokkal
+
+**8. Development szerver futtatása**
+```bash
+php artisan serve
+```
+
+Az API ekkor elérhető lesz: `http://localhost:8000/api`
+
+vagy XAMPP esetén: `http://localhost/reservationSystem/public/api`
+
+**9. Vite futtatása (frontend asset-ek)**
+```bash
+npm run dev
+```
+
+---
+
+## Fejlesztési Munkafolyamat
+
+### A model → migration → controller → route → test sorrend követése
+
+1. **Model létrehozása**
+   ```bash
+   php artisan make:model ModelName -mfsc
+   ```
+   - `-m`: Migration
+   - `-f`: Factory
+   - `-s`: Seeder
+   - `-c`: Controller
+
+2. **Migration szerkesztése**
+   - Nyissa meg: `database/migrations/`
+   - Definiálja az adatbázis táblát
+
+3. **Controller metódusok**
+   - Nyissa meg: `app/Http/Controllers/`
+   - Implementálja a CRUD metódusokat
+
+4. **Route-ok hozzáadása**
+   - Szerkessze: `routes/api.php`
+   - Adja hozzá az új endpoint-okat
+
+5. **Tesztek írása**
+   ```bash
+   php artisan make:test ModelNameTest
+   ```
+   - Helyezze el: `tests/Feature/`
+
+6. **Tesztek futtatása**
+   ```bash
+   php artisan test
+   ```
+
+---
+
+## Biztonsági Jellegzetességek
+
+✅ **Jelszó Hash-elés**: Bcrypt hash-elés `Hash::make()`
+✅ **Token Autentifikáció**: Laravel Sanctum API tokenek
+✅ **Role-Based Access Control**: Admin és felhasználó szerepek
+✅ **Input Validáció**: Request validáció minden endpointon
+✅ **SQL Injekció Védelem**: Eloquent ORM paraméteres lekérdezések
+✅ **CORS Támogatás**: API token alapú hozzáférés
+✅ **Jogosultság Ellenőrzés**: Middleware-szintű autentifikáció és policy-k
+
+---
+
+## Gyakori Kérdések
+
+### Hogyan lehet admin felhasználót létrehozni?
+Az adatbázisban közvetlenül módosítsa az `is_admin` mező értékét 1-re (true).
+
+Vagy a seed-ben: `UserSeeder.php`
+```php
+User::create([
+    'name' => 'admin',
+    'email' => 'admin@example.com',
+    'password' => Hash::make('admin'),
+    'is_admin' => true,  // Ez teszi admin-né
+]);
+```
+
+### Hogyan működik a foglalás státusza?
+- `pending`: Újabb foglalás, még nem jóváhagyva
+- `approved`: Admin által jóváhagyva
+- `rejected`: Admin által elutasítva
+- `cancelled`: Felhasználó által visszavonva
+
+### Mi a különbség a normál felhasználó és az admin között?
+Lásd a **Szerepek (Roles)** szekciót az Autentifikáció részben.
+
+### Hogyan lehet token-t szerezni?
+1. Regisztráljon: `POST /register`
+2. Vagy bejelentkezzen: `POST /login`
+3. A response-ban kapja meg az `access_token`-t
+4. Minden további kéréshez használja: `Authorization: Bearer {token}`
+
+### Mi történik ha a token lejár?
+A token nem jár le automatikusan. A kijelentkezéskor törlődik (`DELETE /logout`).
+
+---
+
+## Jövőbeli Fejlesztések
+
+- [ ] Email notifikációk foglalás módosításkor
+- [ ] SMS notifikációk
+- [ ] Foglalási ütközések automatikus detektálása
+- [ ] Előzetes foglalások időpontok zárása
+- [ ] Felhasználói értékelési rendszer
+- [ ] Foglalás visszamondási politika
+- [ ] Heti/havi foglalási statisztikák
+- [ ] Sokoldalú keresés és szűrés
+- [ ] Integrálás naptár alkalmazásokkal (Google Calendar, Outlook)
+- [ ] Payment gateway integráció (díjfizetéshez)
+- [ ] Automatikus emlékeztetők
+
+---
+
+## Licenc
+
+MIT License
+
+## Szerző
+
+Adrian061022
+
+---
+
+**Projekt indítás dátuma**: 2025. december 4.  
+**Utolsó frissítés**: 2025. december 7.
