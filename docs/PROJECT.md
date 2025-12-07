@@ -248,6 +248,7 @@ A jelenlegi autentikált felhasználó kijelentkeztetése és tokenjének törl�
 ### **GET** `/users/me` - Aktuális Profil
 
 Saját felhasználói profil adatainak lekérése.
+<img width="855" height="160" alt="image" src="https://github.com/user-attachments/assets/b75ff448-4842-4436-8f60-c2fa44e57f3d" />
 
 **Válasz:** `200 OK`
 ```json
@@ -264,6 +265,9 @@ Saját felhasználói profil adatainak lekérése.
 ### **PUT** `/users/me` - Profil Frissítése
 
 Saját felhasználói adatok módosítása (név, e-mail, jelszó, telefonszám).
+<img width="861" height="325" alt="image" src="https://github.com/user-attachments/assets/6fda8113-37c2-4af3-9943-edc5dc4b2bb2" />
+
+
 
 **Kérés Törzse:**
 ```json
@@ -292,6 +296,7 @@ Saját felhasználói adatok módosítása (név, e-mail, jelszó, telefonszám)
 ### **GET** `/users` - Összes Felhasználó Listázása (Admin Csak)
 
 Az összes felhasználó adatainak lekérése adminisztratív célokra.
+<img width="847" height="158" alt="image" src="https://github.com/user-attachments/assets/d76d9356-2169-411c-b927-23307a8dee50" />
 
 **Válasz:** `200 OK`
 ```json
@@ -321,6 +326,7 @@ Az összes felhasználó adatainak lekérése adminisztratív célokra.
 ### **GET** `/users/{id}` - Konkrét Felhasználó Megtekintése (Admin Csak)
 
 Bármely felhasználó adatainak lekérése az ID alapján.
+<img width="855" height="148" alt="image" src="https://github.com/user-attachments/assets/eccaaaaf-8852-45cb-a0bd-9e382e9c6ab4" />
 
 **Válasz:** `200 OK`
 ```json
@@ -341,6 +347,7 @@ Bármely felhasználó adatainak lekérése az ID alapján.
 ### **DELETE** `/users/{id}` - Felhasználó Törlése (Admin Csak)
 
 Felhasználó fizikai törlése az adatbázisból.
+<img width="848" height="162" alt="image" src="https://github.com/user-attachments/assets/a8e37e2a-d157-47da-9779-34094c49338e" />
 
 **Válasz (sikeres törlés):** `200 OK`
 ```json
@@ -358,6 +365,7 @@ Felhasználó fizikai törlése az adatbázisból.
 ### **GET** `/resources` - Összes Erőforrás Listázása
 
 Az összes elérhető erőforrás listájának lekérése (autentifikált felhasználók).
+<img width="860" height="147" alt="image" src="https://github.com/user-attachments/assets/6395df56-b658-447d-85c1-4c35926d1e92" />
 
 **Válasz:** `200 OK`
 ```json
@@ -388,6 +396,7 @@ Az összes elérhető erőforrás listájának lekérése (autentifikált felhas
 ### **GET** `/resources/{id}` - Konkrét Erőforrás Megtekintése
 
 Egy específikus erőforrás részleteinak lekérése.
+<img width="850" height="160" alt="image" src="https://github.com/user-attachments/assets/db14553d-3a6e-4d93-b66a-f1d96732a1bc" />
 
 **Válasz:** `200 OK`
 ```json
@@ -492,6 +501,8 @@ Erőforrás eltávolítása a rendszerből.
 
 - **Normál felhasználó**: Csak saját foglalásait látja
 - **Admin**: Összes foglalást lát
+- <img width="859" height="163" alt="image" src="https://github.com/user-attachments/assets/ead4d7b1-f14b-42d9-8876-ed2cad02c482" />
+
 
 **Válasz:** `200 OK`
 ```json
@@ -515,6 +526,7 @@ Erőforrás eltávolítása a rendszerből.
 
 - **Normál felhasználó**: Csak saját foglalásait érheti el
 - **Admin**: Bármely foglalást megtekinthet
+<img width="853" height="160" alt="image" src="https://github.com/user-attachments/assets/afa8725b-0dc2-414f-8370-58cf7c7a66e4" />
 
 **Válasz:** `200 OK`
 ```json
@@ -542,6 +554,7 @@ Erőforrás eltávolítása a rendszerből.
 ### **POST** `/reservations` - Foglalás Létrehozása
 
 Új foglalás létrehozása egy erőforrásra.
+<img width="862" height="274" alt="image" src="https://github.com/user-attachments/assets/5fb49fbe-d6b7-4a25-a3c2-6f7fd68ab0db" />
 
 **Kérés Törzse:**
 ```json
@@ -575,18 +588,17 @@ Erőforrás eltávolítása a rendszerből.
 
 ---
 
-### **PUT** `/reservations/{id}` - Foglalás Módosítása
+### **PATCH** `/reservations/{id}` - Foglalás Módosítása
 
 Meglévő foglalás adatainak frissítése.
 
 - **Normál felhasználó**: Módosíthatja az időpontokat, de **nem** a `status` mezőt
 - **Admin**: Módosíthat mindent, beleértve a státuszt is
+<img width="845" height="243" alt="image" src="https://github.com/user-attachments/assets/99538372-b732-4f69-b348-5559a1e2aaf8" />
 
 **Kérés Törzse:**
 ```json
 {
-    "start_time": "2025-12-11T14:00:00",
-    "end_time": "2025-12-11T15:00:00",
     "status": "approved"
 }
 ```
@@ -610,6 +622,7 @@ Meglévő foglalás adatainak frissítése.
 ### **DELETE** `/reservations/{id}` - Foglalás Törlése
 
 Foglalás eltávolítása.
+<img width="849" height="188" alt="image" src="https://github.com/user-attachments/assets/1ffc1303-0329-42a4-9aea-b7a49a5de7a9" />
 
 **Válasz:** `200 OK`
 ```json
