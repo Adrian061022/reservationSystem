@@ -341,10 +341,6 @@ php artisan test tests/Feature/AuthTest.php --filter test_register_creates_user
    ```
    Az API a `http://localhost:8000` címen érhető el.
 
-9. **Vite futtatása (frontend asset-ek)**
-   ```bash
-   npm run dev
-   ```
 
 ## Fejlesztési Munkafolyamat
 
