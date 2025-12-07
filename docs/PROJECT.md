@@ -133,6 +133,9 @@ reservationSystem/
 - **POST** `/register` - Regisztrációhoz
 - **POST** `/login` - Bejelentkezéshez
 
+<img width="538" height="131" alt="image" src="https://github.com/user-attachments/assets/f8dbb8d2-7c56-42d0-807c-4e988b251b73" />
+
+
 ### Hibák kezelése:
 - **400 Bad Request**: A kérés hibás formátumú vagy hiányoznak a szükséges mezők
 - **401 Unauthorized**: Érvénytelen vagy hiányzó token
@@ -148,14 +151,17 @@ reservationSystem/
 ### **POST** `/register` - Regisztráció
 
 Új felhasználó regisztrálása. Az új felhasználók alapértelmezetten normál felhasználók (`is_admin = false`).
+<img width="879" height="305" alt="image" src="https://github.com/user-attachments/assets/932be355-2340-43cf-87f9-a2ea603a1bfb" />
+
 
 **Kérés Törzse:**
 ```json
 {
-    "name": "John Doe",
-    "email": "john@example.com",
-    "password": "SecurePass_2025",
-    "phone": "+36201234567"
+    "name":"Adrián3",
+    "email": "adrian32@gmail.com",
+    "phone": "21321312",
+    "password": "Jelszo_2025",
+    "password_confiramtion": "Jelszo_2025"
 }
 ```
 
@@ -164,9 +170,12 @@ reservationSystem/
 {
     "message": "User registered successfully",
     "user": {
-        "id": 10,
-        "name": "John Doe",
-        "email": "john@example.com"
+        "name": "Adrián3",
+        "email": "adrian32@gmail.com",
+        "phone": "21321312",
+        "updated_at": "2025-12-07T17:40:51.000000Z",
+        "created_at": "2025-12-07T17:40:51.000000Z",
+        "id": 66
     }
 }
 ```
@@ -186,6 +195,7 @@ reservationSystem/
 ### **POST** `/login` - Bejelentkezés
 
 Bejelentkezés e-mail címmel és jelszóval.
+<img width="851" height="330" alt="image" src="https://github.com/user-attachments/assets/4a91af5a-0805-480c-81c4-c423571dca26" />
 
 **Kérés Törzse:**
 ```json
@@ -212,7 +222,7 @@ Bejelentkezés e-mail címmel és jelszóval.
 
 ---
 
-> Az innen kezdve minden végpont **autentifikált**, tehát a kérés `Authorization` headerében meg kell adni a tokent:
+> Innen kezdve minden végpont **autentifikált**, tehát a kérés `Authorization` headerében meg kell adni a tokent:
 > 
 > `Authorization: Bearer 2|7Fbr79b5zn8RxMfOqfdzZ31SnGWvgDidjahbdRfL2a98cfd8`
 
@@ -221,6 +231,8 @@ Bejelentkezés e-mail címmel és jelszóval.
 ### **POST** `/logout` - Kijelentkezés
 
 A jelenlegi autentikált felhasználó kijelentkeztetése és tokenjének törlése.
+<img width="871" height="356" alt="image" src="https://github.com/user-attachments/assets/0ac0360d-2797-4ff9-8246-d625cac6b8a7" />
+
 
 **Válasz (sikeres kijelentkezés):** `200 OK`
 ```json
@@ -228,6 +240,7 @@ A jelenlegi autentikált felhasználó kijelentkeztetése és tokenjének törl�
   "message": "Logged out successfully"
 }
 ```
+<img width="703" height="500" alt="image" src="https://github.com/user-attachments/assets/83ce5cdb-df73-4b42-8e4c-f262a24f8948" />
 
 ---
 
