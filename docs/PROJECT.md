@@ -13,7 +13,6 @@ vagy `http://localhost/reservationSystem/public/api` (XAMPP)
 - **Autentifikáció**: Laravel Sanctum (API tokenek)
 - **Adatbázis**: MySQL 8.0+
 - **Testing**: PHPUnit (Feature tesztek)
-- **Build Tool**: Vite
 - **Package Manager**: Composer, npm
 - **PHP verzió**: 8.2+
 
