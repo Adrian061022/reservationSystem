@@ -2,6 +2,8 @@
 
 ## Projekt Áttekintése
 
+base_url: http://127.0.0.1/reservationSystem/public/api vagy http://127.0.0.1:8000/api
+
 A **Reservation System** egy Laravel-alapú API alkalmazás, amely lehetővé teszi a felhasználók számára erőforrások foglalását (például meetingtermek, felszerelések). Az alkalmazás felhasználó-autentifikáción alapul és szerep-alapú hozzáférés-vezérlést (RBAC) alkalmaz adminisztrációs funkciók megvédésére.
 
 ## Technológia Stack
