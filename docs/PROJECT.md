@@ -751,7 +751,8 @@ php artisan test --verbose
 - `test_delete_reservation()` - Foglalás törlés
 - `test_unauthenticated_cannot_create_reservation()` - Autentifikáció ellenőrzés
 
-**Összesen: 32 teszt, 100% pass rate ✅**
+**Összesen: 31 teszt, 100% pass rate ✅**
+<img width="347" height="69" alt="image" src="https://github.com/user-attachments/assets/c39b88b8-efb6-468c-b6e2-cfbf2ff4e609" />
 
 ## Telepítés és Futtatás
 
