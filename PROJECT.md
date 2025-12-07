@@ -382,28 +382,4 @@ Az adatbázisban közvetlenül módosítsa az `is_admin` mező értékét 1-re, 
 - `rejected`: Admin által elutasítva
 - `cancelled`: Felhasználó által visszavonva
 
-### Miért nem módosítható a felhasználó jelszava bejelentkezés után?
-Lehet, az `updateMe` metódusban a `password` mező támogatott. Szükséges a jelenlegi jelszó vagy validáció.
 
-## Jövőbeli Fejlesztések
-
-- [ ] Email notifikációk foglalás módosításkor
-- [ ] Foglalási ütközések detektálása
-- [ ] Előzetes foglalások zárolt időszakok
-- [ ] Felhasználói értékelési rendszer
-- [ ] Foglalás visszamondási politika
-- [ ] Heti/havi foglalási statisztikák
-- [ ] Sokoldalú keresés és szűrés
-- [ ] Integrálás naptár alkalmazásokkal (Google Calendar, Outlook)
-
-## Licenc
-
-MIT License
-
-## Autor
-
-Adrian061022
-
----
-
-**Utolsó frissítés**: 2025. december 4.
