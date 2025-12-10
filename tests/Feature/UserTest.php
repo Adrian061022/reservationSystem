@@ -114,8 +114,8 @@ class UserTest extends TestCase
         $response->assertStatus(200)
                  ->assertJson(['message' => 'User deleted']);
 
-        // Ellenőrizzük az adatbázist
-        $this->assertDatabaseMissing('users', ['id' => $user->id]);
+        // Ellenőrizzük a soft delete-et (deleted_at mező nem NULL)
+        $this->assertSoftDeleted('users', ['id' => $user->id]);
     }
 
     public function test_unauthenticated_cannot_access_user_endpoints()

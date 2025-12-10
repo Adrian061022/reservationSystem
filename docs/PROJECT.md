@@ -346,7 +346,7 @@ Bármely felhasználó adatainak lekérése az ID alapján.
 
 ### **DELETE** `/users/{id}` - Felhasználó Törlése (Admin Csak)
 
-Felhasználó fizikai törlése az adatbázisból.
+Felhasználó (soft delete) törlése az adatbázisból.
 <img width="848" height="162" alt="image" src="https://github.com/user-attachments/assets/a8e37e2a-d157-47da-9779-34094c49338e" />
 
 **Válasz (sikeres törlés):** `200 OK`
@@ -656,7 +656,7 @@ A foglalás a következő státuszok lehetnek:
 | PUT | `/users/me` | Auth | 200 OK, 401, 422 | Profil frissítés |
 | GET | `/users` | Admin | 200 OK, 403, 401 | Összes felhasználó |
 | GET | `/users/{id}` | Admin | 200 OK, 403, 404, 401 | Konkrét felhasználó |
-| DELETE | `/users/{id}` | Admin | 200 OK, 403, 404, 401 | Felhasználó törlés |
+| DELETE | `/users/{id}` | Admin | 200 OK, 403, 404, 401 | Felhasználó törlés(soft delete) |
 | GET | `/resources` | Auth | 200 OK, 401 | Erőforrások |
 | GET | `/resources/{id}` | Auth | 200 OK, 401, 404 | Konkrét erőforrás |
 | POST | `/resources` | Admin | 201 Created, 403, 401 | Erőforrás létrehozás |
@@ -824,7 +824,7 @@ php artisan test --verbose
 - `test_admin_list_all_users()` - Admin - összes felhasználó
 - `test_non_admin_cannot_list_users()` - Jogosultság ellenőrzés
 - `test_admin_show_specific_user()` - Admin - konkrét felhasználó
-- `test_admin_delete_user()` - Admin - felhasználó törlés
+- `test_admin_delete_user()` - Admin - felhasználó törlés(soft delete)
 - `test_unauthenticated_cannot_access_user_endpoints()` - Autentifikáció ellenőrzés
 
 #### ResourceTest.php (8 teszt)
