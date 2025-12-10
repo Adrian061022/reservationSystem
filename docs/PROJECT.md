@@ -693,6 +693,105 @@ A foglalás a következő státuszok lehetnek:
    - ✓ Foglalás státuszának módosítása
    - ✓ Felhasználók törlése
 
+## Modellek
+
+- User — Felhasználó entitás, tartalmaz kapcsolatot a foglalásokkal.
+```php
+protected $fillable = [
+    'name',
+    'email',
+    'password',
+    'phone'
+];
+
+public function reservations()
+{
+    return $this->hasMany(Reservation::class);
+}
+```
+
+- Resource — Erőforrás (pl. terem/eszkoz) entitás, rendelkezésre állás jelzővel.
+```php
+protected $fillable = [
+    'name',
+    'type',
+    'description',
+    'available',
+];
+
+protected $casts = [
+    'available' => 'boolean',
+];
+
+public function reservations()
+{
+    return $this->hasMany(Reservation::class);
+}
+```
+
+- Reservation — Foglalás entitás, tartalmaz időpontokat és státuszt.
+```php
+protected $fillable = [
+    'user_id',
+    'resource_id',
+    'start_time',
+    'end_time',
+    'status',
+];
+
+protected $casts = [
+    'start_time' => 'datetime',
+    'end_time' => 'datetime',
+];
+```
+
+## Factory-k
+
+- UserFactory — Generál name, email, phone, bcrypt-elt alap jelszó.
+```php
+'password' => bcrypt('password'),
+'phone' => fake()->phoneNumber(),
+```
+
+- ResourceFactory — Generál név, típus, leírás és available boolean értéket.
+```php
+'name' => fake()->words(2, true),
+'description' => fake()->sentence(),
+'type' => fake()->randomElement(['room','car','projector','other']),
+'available' => $this->faker->boolean(80),
+```
+
+- ReservationFactory — Generál user_id, resource_id, start_time, end_time és status.
+```php
+'user_id' => User::factory(),
+'resource_id' => Resource::factory(),
+'start_time' => $this->faker->dateTimeBetween('now', '+2 days'),
+'end_time' => $this->faker->dateTimeBetween('+3 days', '+5 days'),
+'status' => 'pending',
+```
+
+## Seeder-ek
+
+- UserSeeder — Létrehoz egy admin felhasználót a seederben.
+```php
+User::factory()->create([
+  'name' => 'Admin2',
+  'email' => 'admin2@example.com',
+  'password' => 'admin',
+  'is_admin' => true,
+]);
+```
+
+- ResourceSeeder — Létrehoz tömegesen erőforrásokat a factory-val.
+```php
+Resource::factory(5)->create();
+```
+
+- ReservationSeeder — Létrehoz több foglalást a ReservationFactory segítségével.
+```php
+Reservation::factory(20)->create();
+```
+
 ## Tesztek
 
 ### Teszt Futtatása
